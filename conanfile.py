@@ -29,6 +29,11 @@ class PbcConan(ConanFile):
             sha256="772527404117587560080241cedaf441e5cac3269009cdde4c588a1dce4c23d2",
             strip_root=True,
         )
+        # Have to update config.sub in order to build for iOS
+        tools.download(
+            "https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD",
+            "config.sub", overwrite=True,
+        )
 
     def build(self):
         autotools = AutoToolsBuildEnvironment(self)
