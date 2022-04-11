@@ -13,7 +13,7 @@ class PbcConan(ConanFile):
     # Optional metadata
     license = "LGPL-3.0"
     author = "Kareem Shehata <kareem@shehata.ca>"
-    url = "TBD"
+    url = "https://github.com/kshehata/conan-pbc"
     description = "The PBC (Pairing-Based Crypto) library is a C library providing low-level routines for pairing-based cryptosystems."
     topics = ("pbc", "crypto", "cryptography", "security", "pairings" "cryptographic")
 
