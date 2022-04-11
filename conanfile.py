@@ -1,4 +1,10 @@
 from conans import ConanFile, tools, AutoToolsBuildEnvironment
+import functools
+import subprocess
+
+def quick_run(*args):
+    p = subprocess.run(args, stdout=subprocess.PIPE, universal_newlines=True)
+    return p.stdout.strip()
 
 class PbcConan(ConanFile):
     name = "pbc"
@@ -15,6 +21,7 @@ class PbcConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False]}
     default_options = {"shared": False, "fPIC": True}
+    requires = "gmp/6.2.1"
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt", "src/*", "include/*"
@@ -35,9 +42,35 @@ class PbcConan(ConanFile):
             "config.sub", overwrite=True,
         )
 
-    def build(self):
+    @functools.lru_cache(1)
+    def _configure_autotools(self):
         autotools = AutoToolsBuildEnvironment(self)
-        autotools.configure()
+        yes_no = lambda v: "yes" if v else "no"
+        configure_args = [
+            "--with-pic={}".format(yes_no(self.options.get_safe("fPIC", True))),
+            "--enable-shared={}".format(yes_no(self.options.shared)),
+            "--enable-static={}".format(yes_no(not self.options.shared)),
+        ]
+
+        # No idea why this is necessary, but if you don't set CC this way, then
+        # configure complains that it can't find gmp.
+        if self.settings.os == "iOS":
+            if self.settings.arch == "x86_64":
+                platform = "iphonesimulator"
+                target = "x86_64-apple-darwin"
+            else:
+                platform = "iphoneos"
+                target = "arm64-apple-darwin"
+            sdk_path = quick_run("xcrun", "-sdk", platform, "-show-sdk-path")
+            cc = quick_run("xcrun", "-sdk", platform, "-find", "cc")
+            configure_args.append("CC={} -isysroot {} -target {}".format(
+                cc, sdk_path, target))
+
+        autotools.configure(args=configure_args)
+        return autotools
+
+    def build(self):
+        autotools = self._configure_autotools()
         autotools.make()
 
     def package(self):
