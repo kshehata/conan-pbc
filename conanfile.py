@@ -63,8 +63,9 @@ class PbcConan(ConanFile):
                 target = "arm64-apple-darwin"
             sdk_path = quick_run("xcrun", "-sdk", platform, "-show-sdk-path")
             cc = quick_run("xcrun", "-sdk", platform, "-find", "cc")
-            configure_args.append("CC={} -isysroot {} -target {}".format(
-                cc, sdk_path, target))
+            min_ios = "-miphoneos-version-min={}".format(self.settings.os.version)
+            configure_args.append("CC={} -isysroot {} -target {} {}".format(
+                cc, sdk_path, target, min_ios))
 
         autotools.configure(args=configure_args)
         return autotools
